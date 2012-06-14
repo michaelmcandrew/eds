@@ -8,8 +8,7 @@
 
 // FAPI items of type markup use '#value' in D6 and '#markup' in D7
 define('WEBFORM_CIVICRM_MARKUP', '#markup');
-// FAPI form_state uses 'post' in D6 and 'input' in D7
-define('WEBFORM_CIVICRM_FAPI_INPUT', 'input');
+
 
 /**
  * Return FAPI class formatted for D7
@@ -70,18 +69,6 @@ function webform_civicrm_ajax_form_item(&$form, $pathstr, $control_element, $con
     '#type' => 'markup',
     '#suffix' => '</div>',
   );
-}
-
-
-/**
- * Fetch the path of a file
- * And format it as a public url that CiviCRM can read
- */
-function webform_civicrm_filepath($id) {
-  if ($file = file_load($id)) {
-    global $base_url;
-    return str_replace('public://', $base_url . '/' . variable_get('file_public_path', conf_path() . '/files') . '/', str_replace(array('%3A', '%2F'), array(':', '/'), rawurlencode($file->uri)));
-  }
 }
 
 

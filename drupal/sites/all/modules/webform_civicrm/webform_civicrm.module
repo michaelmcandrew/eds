@@ -19,7 +19,7 @@ function webform_civicrm_menu() {
     'page arguments' => array('webform_civicrm_configure_form', 1),
     'access callback' => 'webform_civicrm_form_access',
     'access arguments' => array(1),
-    'file' => 'webform_civicrm_admin.inc',
+    'file' => 'webform_civicrm_forms.inc',
     'weight' => 3,
     'type' => MENU_LOCAL_TASK,
   );
@@ -57,7 +57,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   // Alter back-end webform component edit forms
   if ($form_id == 'webform_component_edit_form'
   && substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
-    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_admin');
+    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
     _webform_civicrm_webform_component_form_alter($form, $form_state);
   }
 
@@ -140,7 +140,7 @@ function webform_civicrm_theme() {
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
   if (!empty($node->webform_civicrm)) {
-    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
+    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
     webform_civicrm_process_submission($node, $submission, 'presave');
   }
 }
@@ -274,20 +274,6 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
 
 
 /**
- * Implements hook_civicrm_post().
- * Update submission data when civicrm data is deleted.
- */
-function webform_civicrm_civicrm_post($op, $type, $id, $obj) {
-  if ($type === 'Activity' && $op === 'delete') {
-    db_update('webform_civicrm_submissions')
-    ->fields(array('activity_id' => 0))
-    ->condition('activity_id', $id)
-    ->execute();
-  }
-}
-
-
-/**
  * FAPI AJAX callback for the configure form.
  */
 function webform_civicrm_configure_form_ajax($form, $form_state) {
@@ -318,35 +304,12 @@ function webform_civicrm_help($section) {
 
 /**
  * Implements hook_webform_component_presave().
- * Alter form keys when cloning a contact.
+ * Alter form key when cloning a contact.
  */
 function webform_civicrm_webform_component_presave(&$component) {
   if ($c = webform_civicrm_contact_clone_storage()) {
     $component['form_key'] = str_replace($c['old'], $c['new'], $component['form_key']);
   }
-}
-
-
-/**
- * Return a value from nested arrays or objects.
- * @param $haystack: the array to search
- * @param $keys: pass a single key, or multiple keys separated by : to get a nested value
- * @param $default: value to return if given array key does not exist
- * @param $strict: should we use empty or isset to determine if array key exists?
- * @return: found value or default
- */
-function webform_civicrm_aval($haystack, $keys, $default = NULL, $strict = FALSE) {
-  foreach (explode(':', $keys) as $key) {
-    if (is_object($haystack)) {
-      $haystack = (array) $haystack;
-    }
-    if (!is_array($haystack) || !isset($haystack[$key]) || (empty($haystack[$key]) && $default !== NULL && !$strict)) {
-      return $default;
-    }
-    $haystack = $haystack[$key];
-  }
-  // $haystack has been reduced down to the item we want
-  return $haystack;
 }
 
 
@@ -395,7 +358,7 @@ function webform_civicrm_contact_clone($form, $form_state) {
  * Validation callback for webform submissions.
  */
 function webform_civicrm_form_validate($form, &$form_state) {
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
   civicrm_initialize();
   require_once 'CRM/Utils/Type.php';
   $node = $form['#node'];
@@ -412,22 +375,5 @@ function webform_civicrm_form_validate($form, &$form_state) {
       $submitted = webform_civicrm_enabled_fields($node, $values);
     }
     _webform_civicrm_participant_validate($form, $form_state, $submitted);
-  }
-}
-
-
-/**
- * Webform submission hooks don't have access to $form_state
- * So this extra submission handler stores it.
- */
-function webform_civicrm_storage($form, $form_state = NULL) {
-  static $storage = array();
-  // During form submission, store data for later
-  if (is_array($form) && !empty($form['#node']->nid) && !empty($form_state['storage']['civicrm'])) {
-    $storage[$form['#node']->nid] = $form_state['storage']['civicrm'];
-  }
-  // Retrieve stored data
-  elseif (is_numeric($form)) {
-    return webform_civicrm_aval($storage, $form, array());
   }
 }

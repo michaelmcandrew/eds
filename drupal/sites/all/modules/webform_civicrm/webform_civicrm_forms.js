@@ -15,65 +15,26 @@ function web_civi_master_id(n, c) {
 
 function web_civi_select_reset(op, id) {
   switch (op) {
-    case 'all':
-      jQuery(id).find('input:checkbox').attr('checked', 'checked');
-      jQuery(id).find('select[multiple] option, option[value="create_civicrm_webform_element"]').each(function() {
-        jQuery(this).attr('selected', 'selected');
-      });
-      break;
-    case 'none':
-      jQuery(id).find('input:checkbox').attr('checked', '');
-      jQuery(id).find('select:not([multiple])').each(function() {
-        if (jQuery(this).val() === 'create_civicrm_webform_element') {
-          jQuery(this).find('option').each(function() {
-            jQuery(this).attr('selected', jQuery(this).attr('defaultSelected'));
-          });
-        }
-        if (jQuery(this).val() === 'create_civicrm_webform_element') {
-          jQuery(this).find('option:first-child+option').attr('selected', 'selected');
-        }
-      });
-      jQuery(id).find('select[multiple] option').each(function() {
-        jQuery(this).attr('selected', '');
-      });
-      break;
     case 'reset':
       jQuery(id).find('input:checkbox').each(function() {
         jQuery(this).attr('checked', jQuery(this).attr('defaultChecked'));
       });
-      jQuery(id).find('select option').each(function() {
-        jQuery(this).attr('selected', jQuery(this).attr('defaultSelected'));
-      });
       break;
+    default:
+      jQuery(id).find('input:checkbox').attr('checked', op);
   }
 }
 
 function web_civi_participant_conditional(fs) {
+  var splitstr = jQuery(fs + ' .participant_event_id').val().split('-');
   var info = {
     roleid:jQuery(fs + ' .participant_role_id').val(),
-    eventid:'0',
-    eventtype:jQuery('#edit-reg-options-event-type').val()
+    eventid:splitstr[0],
+    eventtype:splitstr[1]
   };
-  var events = [];
-  var i = 0;
-  jQuery(fs + ' .participant_event_id :selected').each(function(a, selected) { 
-    if (jQuery(selected).val() !== 'create_civicrm_webform_element') {
-      events[i++] = jQuery(selected).val();
-    }
-  });
-  for (i in events) {
-    var splitstr = events[i].split('-');
-    if (events.length === 1) {
-      info['eventid'] = splitstr[0];
-    }
-    if (i == 0) {
-      info['eventtype'] = splitstr[1];
-    }
-    else if (info['eventtype'] !== splitstr[1]) {
-      info['eventtype'] = '0';
-    }
+  if (info['eventid'] === 'create_civicrm_webform_element') {
+    info['eventtype'] = jQuery('#edit-reg-options-event-type').val();
   }
-
   jQuery(fs + ' fieldset.extends-condition').each(function(){
     var hide = true;
     classes = jQuery(this).attr('class').split(' ');
@@ -105,15 +66,13 @@ function web_civi_participant_conditional(fs) {
     var contacts = $('#edit-number-of-contacts').val();
     if (contacts > 1) {
       var types = new Object();
-      for (var c=1; c<=contacts; c++) {
-        var sub_type = [];
-        $('#edit-civicrm-'+c+'-contact-1-contact-contact-sub-type :selected').each(function(i, selected) { 
-          if ($(selected).val() !== 'create_civicrm_webform_element') {
-            sub_type[i] = $(selected).val();
-          }
-        });
-        types[c] = {
-              type: $('#edit-'+c+'-contact-type').val(),
+      for (var i=1; i<=contacts; i++) {
+        var sub_type = $('#edit-civicrm-'+i+'-contact-1-contact-contact-sub-type').val();
+        if (sub_type == 0 || sub_type == 'create_civicrm_webform_element') {
+          sub_type = null;
+        }
+        types[i] = {
+              type: $('#edit-'+i+'-contact-type').val(),
           sub_type: sub_type,
         };
       }
@@ -127,15 +86,15 @@ function web_civi_participant_conditional(fs) {
           var t = webform_civicrm_relationship_data[i];
           if ( (t['type_a'] == contact_a['type'] || !t['type_a'])
             && (t['type_b'] == contact_b['type'] || !t['type_b'])
-            && ($.inArray(t['sub_type_a'], contact_a['sub_type']) > -1 || !t['sub_type_a'])
-            && ($.inArray(t['sub_type_b'], contact_b['sub_type']) > -1 || !t['sub_type_b'])
+            && (t['sub_type_a'] == contact_a['sub_type'] || !t['sub_type_a'])
+            && (t['sub_type_b'] == contact_b['sub_type'] || !t['sub_type_b'])
           ) {
             $(this).append('<option value="'+t['id']+'_a">'+t['label_a_b']+'</option>');
           }
           if ( (t['type_a'] == contact_b['type'] || !t['type_a'])
             && (t['type_b'] == contact_a['type'] || !t['type_b'])
-            && ($.inArray(t['sub_type_a'], contact_b['sub_type']) > -1 || !t['sub_type_a'])
-            && ($.inArray(t['sub_type_b'], contact_a['sub_type']) > -1 || !t['sub_type_b'])
+            && (t['sub_type_a'] == contact_b['sub_type'] || !t['sub_type_a'])
+            && (t['sub_type_b'] == contact_a['sub_type'] || !t['sub_type_b'])
             && (t['name_a_b'] !== t['name_b_a'])
           ) {
             $(this).append('<option value="'+t['id']+'_b">'+t['label_b_a']+'</option>');

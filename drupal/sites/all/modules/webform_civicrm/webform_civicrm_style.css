@@ -30,10 +30,7 @@ form .form-item-activity-targets + div,
   clear:both;
 }
 
-form .hidden,
-.js #no-js-button-wrapper,
-.web-civi-js-select,
-#civi-contact-match-off {
+form .hidden, .js #no-js-button-wrapper {
   display:none;
 }
 
@@ -47,18 +44,18 @@ th div.form-type-radio {
   padding:0;
 }
 
-.js fieldset:hover > div > .web-civi-js-select,
-.js fieldset:hover > .web-civi-js-select {
-  display:block;
+.web-civi-js-select {
+  display:none;
 }
 
-.web-civi-js-select {
+.js div.web-civi-js-select {
+  display:block;
   font-size:0.8em;
   position:absolute;
-  right:5px;
+  right:1em;
   padding:0.2em 0.5em;
   background-color:white;
-  top:-10px;
+  top:-2.5em;
   border:1px solid #CCCCCC;
 }
 
